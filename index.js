@@ -379,8 +379,8 @@ function pingServers(servers, count, callback) {
   }
 }
 
-function downloadSpeed(urls, maxTime, callback) {
-  var concurrent = 2
+function downloadSpeed(urls, maxTime, concurrency, callback) {
+  var concurrent = concurrency || 2
     , running = 0
     , started = 0
     , done = 0
@@ -454,8 +454,8 @@ function downloadSpeed(urls, maxTime, callback) {
   }
 }
 
-function uploadSpeed(url, sizes, maxTime, callback) {
-  var concurrent = 2
+function uploadSpeed(url, sizes, maxTime, concurrency, callback) {
+  var concurrent = concurrency || 2
     , running = 0
     , started = 0
     , done = 0
@@ -687,14 +687,14 @@ function speedTest(options) {
 
     for (n = 0; n < sizes.length; n++) {
       size = sizes[n];
-      for (i = 0; i < 4; i++) {
+      for (i = 0; i < 8; i++) {
         urls.push(url.resolve(svrurl, 'random' + size + 'x' + size + '.jpg'));
       }
     }
 
     self.emit('testserver', server);
 
-    downloadSpeed.call(self, urls, options.maxTime, function(err, speed) {
+    downloadSpeed.call(self, urls, options.maxTime, 16, function(err, speed) {
       if (err) return self.emit('error', err);
       var fixed = speed * speedTestDownloadCorrectionFactor / 125000;
       self.emit('downloadprogress', 100);
@@ -739,7 +739,7 @@ function speedTest(options) {
       }
     }
     self.emit('testserver', speedInfo.bestServer);
-    uploadSpeed.call(self, speedInfo.bestServer.url, sizes, options.maxTime, function(err, speed) {
+    uploadSpeed.call(self, speedInfo.bestServer.url, sizes, options.maxTime, 8, function(err, speed) {
       if (err) return self.emit('error', err);
       speedInfo.uploadSpeed = speed;
       speedInfo.speedTestUploadSpeed = speed * speedTestUploadCorrectionFactor / 125000;
