@@ -694,7 +694,7 @@ function speedTest(options) {
 
     self.emit('testserver', server);
 
-    downloadSpeed.call(self, urls, options.maxTime, 16, function(err, speed) {
+    downloadSpeed.call(self, urls, options.maxTime, urls.length, function(err, speed) {
       if (err) return self.emit('error', err);
       var fixed = speed * speedTestDownloadCorrectionFactor / 125000;
       self.emit('downloadprogress', 100);
