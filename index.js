@@ -156,7 +156,7 @@ function getHttp(theUrl, discard, callback) {
   options.headers = options.headers || {};
   options.headers['user-agent'] = options.headers['user-agent'] || 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.' + Math.trunc(Math.random() * 400 + 2704) + '.' + Math.trunc(Math.random() * 400 + 103) + ' Safari/537.36';
 
-  http.get(options, function(res) {
+  const req = http.get(options, function(res) {
     if (res.statusCode === 302) {
       return getHttp(res.headers.location, discard, callback);
     }
@@ -174,7 +174,9 @@ function getHttp(theUrl, discard, callback) {
       if (discard) data = count;
       callback(null, data, res.statusCode);
     });
-  }).on('error', callback);
+  });
+  req.on('error', callback);
+  return req;
 }
 
 function postHttp(theUrl, data, callback) {
@@ -289,6 +291,8 @@ function randomPutHttp(theUrl, size, callback) {
   request.on('drain', write);
 
   write();
+
+  return request;
 }
 
 function getXML(xmlurl, callback) {
@@ -400,6 +404,8 @@ function downloadSpeed(urls, maxTime, concurrency, callback) {
     emit = function() {};
   }
 
+  const requests = [];
+
   next();
 
   timeStart = process.hrtime();
@@ -415,7 +421,7 @@ function downloadSpeed(urls, maxTime, concurrency, callback) {
 
     started++;
 
-    getHttp(url, true, function(err, count) { //discard all data and return byte count
+    const req = getHttp(url, true, function(err, count) { //discard all data and return byte count
       if (err) return callback(err);
       var diff = process.hrtime(timeStart)
         , timePct
@@ -444,11 +450,13 @@ function downloadSpeed(urls, maxTime, concurrency, callback) {
         emit('downloadspeedprogress', fixed);
       }
       if (done >= todo) {
+        requests.forEach(r => r.abort());
         callback(null, speed); //bytes/sec
       } else {
         next();
       }
     });
+    requests.push(req);
 
     next(); //Try another
   }
@@ -474,6 +482,8 @@ function uploadSpeed(url, sizes, maxTime, concurrency, callback) {
     emit = function() {};
   }
 
+  const requests = [];
+
   next();
 
   timeStart = process.hrtime();
@@ -489,7 +499,7 @@ function uploadSpeed(url, sizes, maxTime, concurrency, callback) {
     started++;
     //started=(started+1) % todo; //Keep staing more until the time is up...
 
-    randomPutHttp(url, size, function(err, count) { //discard all data and return byte count
+    const req = randomPutHttp(url, size, function(err, count) { //discard all data and return byte count
       if (done >= todo) return;
       if (err) {
         count = 0;
@@ -521,11 +531,13 @@ function uploadSpeed(url, sizes, maxTime, concurrency, callback) {
         emit('uploadspeedprogress', fixed);
       }
       if (done >= todo) {
+        requests.forEach(r => r.abort());
         callback(null, speed); //bytes/sec
       } else {
         next();
       }
     });
+    requests.push(req);
 
     next(); //Try another
   }
