@@ -339,6 +339,7 @@ function pingServer(server, callback) {
       complete = true;
       var diff = process.hrtime(start);
       diff = diff[0] + diff[1] * 1e-9; //seconds
+      diff /= 2; // Downloads over tcp are, essentially, two exchanges - connection-setup/ack request/response
       if (!err && data.substr(0, 9) !== 'test=test') err = new Error('Unknown latency file');
       if (err) diff = 3600; //an hour...
       if (diff < bestTime) bestTime = diff;
