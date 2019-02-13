@@ -174,6 +174,10 @@ function getHttp(theUrl, discard, callback) {
       if (discard) data = count;
       callback(null, data, res.statusCode);
     });
+    res.on('aborted', function() {
+      if (discard) data = count;
+      callback(null, data, res.statusCode);
+    });
   });
   req.on('error', callback);
   return req;
@@ -267,6 +271,9 @@ function randomPutHttp(theUrl, size, callback) {
     });
     response.on('end', function() {
       // Some cases (like HTTP 413) will interrupt the upload, but still return a response
+      callback(null, size - toSend);
+    });
+    response.on('aborted', function() {
       callback(null, size - toSend);
     });
   });
@@ -442,15 +449,21 @@ function downloadSpeed(urls, maxTime, concurrency, callback) {
       // amtPct=done/todo*100;
       amtPct = 0; //time-only
 
+      const idx = requests.indexOf(req);
+      if (idx !== -1) {
+        requests.splice(idx, 1);
+      }
+
       if (diff > maxTime) {
-        done = todo;
+        //done = todo;
+        requests.forEach(r => r.abort());
+        requests.length = 0;
       }
       if (done <= todo) {
         emit('downloadprogress', Math.round(Math.min(Math.max(timePct, amtPct), 100.0) * 10) / 10);
         emit('downloadspeedprogress', fixed);
       }
       if (done >= todo) {
-        requests.forEach(r => r.abort());
         callback(null, speed); //bytes/sec
       } else {
         next();
@@ -523,8 +536,15 @@ function uploadSpeed(url, sizes, maxTime, concurrency, callback) {
       amtPct = done / todo * 100;
       //amtPct=0; //time-only
 
+      const idx = requests.indexOf(req);
+      if (idx !== -1) {
+        requests.splice(idx, 1);
+      }
+
       if (diff > maxTime) {
-        done = todo;
+        //done = todo;
+        requests.forEach(r => r.abort());
+        requests.length = 0;
       }
       if (done <= todo) {
         emit('uploadprogress', Math.round(Math.min(Math.max(timePct, amtPct), 100.0) * 10) / 10);
