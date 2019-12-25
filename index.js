@@ -430,7 +430,9 @@ function downloadSpeed(urls, maxTime, concurrency, callback) {
     started++;
 
     const req = getHttp(url, true, function(err, count) { //discard all data and return byte count
-      if (err) return callback(err);
+      if (err) {
+        count = 0;
+      }
       var diff = process.hrtime(timeStart)
         , timePct
         , amtPct
