@@ -264,21 +264,34 @@ function randomPutHttp(theUrl, size, callback) {
   proxy(options);
   delete options.protocol;
 
+  function dSent() {
+    if (request && request.socket) {
+      return request.socket.bytesWritten;
+    }
+    else {
+      return size - toSend;
+    }
+  }
+
   request = http.request(options, function(response) {
-    response.on('error', callback);
+    response.on('error', function(){
+      callback(null, dSent());
+    });
     response.on('data', function(newData) {
       //discard
     });
     response.on('end', function() {
       // Some cases (like HTTP 413) will interrupt the upload, but still return a response
-      callback(null, size - toSend);
+      callback(null, dSent());
     });
     response.on('aborted', function() {
-      callback(null, size - toSend);
+      callback(null, dSent());
     });
   });
 
-  request.on('error', callback);
+  request.on('error', function(){
+    callback(null, 0);
+  });
 
   function write() {
     do {
