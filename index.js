@@ -391,12 +391,12 @@ function pingServers(servers, count, callback) {
   }
 }
 
-function downloadSpeed(urls, maxTime, concurrency, callback) {
+function downloadSpeed(urls, maxTime, concurrency, iterations, callback) {
   var concurrent = concurrency || 2
     , running = 0
     , started = 0
     , done = 0
-    , todo = urls.length
+    , todo = urls.length * (iterations || 1)
     , totalBytes = 0
     , emit
     , timeStart
@@ -424,7 +424,7 @@ function downloadSpeed(urls, maxTime, concurrency, callback) {
     running++;
 
     var starting = started
-      , url      = urls[starting]
+      , url      = urls[starting % urls.length]
       ;
 
     started++;
@@ -478,12 +478,12 @@ function downloadSpeed(urls, maxTime, concurrency, callback) {
   }
 }
 
-function uploadSpeed(url, sizes, maxTime, concurrency, callback) {
+function uploadSpeed(url, sizes, maxTime, concurrency, iterations, callback) {
   var concurrent = concurrency || 2
     , running = 0
     , started = 0
     , done = 0
-    , todo = sizes.length
+    , todo = sizes.length * iterations
     , totalBytes = 0
     , emit
     , timeStart
@@ -509,7 +509,7 @@ function uploadSpeed(url, sizes, maxTime, concurrency, callback) {
     if (running >= concurrent) return;
     running++;
     var starting = started
-      , size     = sizes[starting]
+      , size     = sizes[starting % sizes.length]
       ;
 
     started++;
@@ -729,7 +729,7 @@ function speedTest(options) {
 
     self.emit('testserver', server);
 
-    downloadSpeed.call(self, urls, options.maxTime, urls.length, function(err, speed) {
+    downloadSpeed.call(self, urls, options.maxTime, urls.length, 20, function(err, speed) {
       if (err) return self.emit('error', err);
       var fixed = speed * speedTestDownloadCorrectionFactor / 125000;
       self.emit('downloadprogress', 100);
@@ -774,7 +774,7 @@ function speedTest(options) {
       }
     }
     self.emit('testserver', speedInfo.bestServer);
-    uploadSpeed.call(self, speedInfo.bestServer.url, sizes, options.maxTime, 8, function(err, speed) {
+    uploadSpeed.call(self, speedInfo.bestServer.url, sizes, options.maxTime, 8, 20, function(err, speed) {
       if (err) return self.emit('error', err);
       speedInfo.uploadSpeed = speed;
       speedInfo.speedTestUploadSpeed = speed * speedTestUploadCorrectionFactor / 125000;
