@@ -39,6 +39,7 @@ var parseXML     = require('xml2js').parseString
   , proxyOptions = null
   , proxyHttpEnv = findPropertiesInEnvInsensitive('HTTP_PROXY')
   , proxyHttpsEnv = findPropertiesInEnvInsensitive('HTTPS_PROXY')
+  , maxCpus = require('os').cpus().length
   ;
 
 function findPropertiesInEnvInsensitive(prop) {
@@ -787,7 +788,7 @@ function speedTest(options) {
       }
     }
     self.emit('testserver', speedInfo.bestServer);
-    uploadSpeed.call(self, speedInfo.bestServer.url, sizes, options.maxTime, 8, 20, function(err, speed) {
+    uploadSpeed.call(self, speedInfo.bestServer.url, sizes, options.maxTime, maxCpus, 20, function(err, speed) {
       if (err) return self.emit('error', err);
       speedInfo.uploadSpeed = speed;
       speedInfo.speedTestUploadSpeed = speed * speedTestUploadCorrectionFactor / 125000;
