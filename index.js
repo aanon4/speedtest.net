@@ -33,6 +33,7 @@ var parseXML     = require('xml2js').parseString
   , EventEmitter = require('events').EventEmitter
   , HttpProxyAgent = require('http-proxy-agent')
   , HttpsProxyAgent = require('https-proxy-agent')
+  , DecompressResponse = require('decompress-response')
   // These numbers were obtained by measuring and averaging both using this module and the official speedtest.net
   , speedTestDownloadCorrectionFactor = 1.135
   , speedTestUploadCorrectionFactor   = 1.139
@@ -156,6 +157,7 @@ function getHttp(theUrl, discard, callback) {
 
   options.headers = options.headers || {};
   options.headers['user-agent'] = options.headers['user-agent'] || 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.' + Math.trunc(Math.random() * 400 + 2704) + '.' + Math.trunc(Math.random() * 400 + 103) + ' Safari/537.36';
+  options.headers['access-encoding'] = 'gzip';
 
   const req = http.get(options, function(res) {
     if (res.statusCode === 302) {
@@ -164,6 +166,8 @@ function getHttp(theUrl, discard, callback) {
     var data = ''
       , count = 0
       ;
+
+    res = DecompressResponse(res);
 
     if (!discard) res.setEncoding('utf8');
     res.on('error', callback);
