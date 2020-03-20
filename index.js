@@ -159,13 +159,14 @@ function getHttp(theUrl, discard, callback) {
   options.headers['user-agent'] = options.headers['user-agent'] || 'Mozilla/5.0 (Windows NT 6.3) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/51.0.' + Math.trunc(Math.random() * 400 + 2704) + '.' + Math.trunc(Math.random() * 400 + 103) + ' Safari/537.36';
   options.headers['accept-encoding'] = 'gzip';
 
+  var data = ''
+  , count = 0
+  ;
+
   const req = http.get(options, function(res) {
     if (res.statusCode === 302) {
       return getHttp(res.headers.location, discard, callback);
     }
-    var data = ''
-      , count = 0
-      ;
 
     res = DecompressResponse(res);
 
@@ -184,7 +185,10 @@ function getHttp(theUrl, discard, callback) {
       callback(null, data, res.statusCode);
     });
   });
-  req.on('error', callback);
+  req.on('error', function() {
+    if (discard) data = count;
+    callback(null, data, 500);
+  });
   return req;
 }
 
@@ -295,7 +299,7 @@ function randomPutHttp(theUrl, size, callback) {
   });
 
   request.on('error', function(){
-    callback(null, 0);
+    callback(null, dSent());
   });
 
   function write() {
@@ -449,6 +453,7 @@ function downloadSpeed(urls, maxTime, concurrency, iterations, callback) {
 
     const req = getHttp(url, true, function(err, count) { //discard all data and return byte count
       if (err) {
+        console.log(err, count);
         count = 0;
       }
       var diff = process.hrtime(timeStart)
