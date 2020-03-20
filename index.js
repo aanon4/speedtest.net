@@ -278,7 +278,7 @@ function randomPutHttp(theUrl, size, callback) {
       return request.socket.bytesWritten;
     }
     else {
-      return size - toSend;
+      return 0; // size - toSend;
     }
   }
 
@@ -453,7 +453,6 @@ function downloadSpeed(urls, maxTime, concurrency, iterations, callback) {
 
     const req = getHttp(url, true, function(err, count) { //discard all data and return byte count
       if (err) {
-        console.log(err, count);
         count = 0;
       }
       var diff = process.hrtime(timeStart)
